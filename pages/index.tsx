@@ -4,23 +4,49 @@ import dynamic from 'next/dynamic';
 import themes, { ThemeProvider } from '@soomo/lib/styles/themes';
 
 import TopBar from '../components/TopBar';
-import sqrQuestionPools from '../fixtures/sqrQuestionPools';
 import { NextPage } from 'next';
 import { useCallback, useState } from 'react';
 
 const Text = dynamic(() => import('@soomo/lib/components/pageElements').then((m) => m.Text), {
 	ssr: false
 });
+
+/*
 const SQRQuestionDeck = dynamic(
 	() => import('../components/SQRQuestionDeck').then((m) => m.default),
 	{ ssr: false }
 );
+*/
 
-export type InterventionType = null | 'auto-open' | 'spotlight';
+const PollQuestion = dynamic(() => import('../components/PollQuestion').then((m) => m.default), {
+	ssr: false
+});
+
+const POLL_BODY =
+	'In your opinion, which of the three issues that specifically mention Child Protective Services (CPS) seems most similar to the problems reported in the video from the Austin American-Statesman?';
+
+const POLL_CHOICES = [
+	{
+		id: 0,
+		family_id: 'choice-0',
+		body: 'Issue 1: Efforts to reduce turnover of CPS caseworkers fail to address key reasons many staff leave.'
+	},
+	{
+		id: 1,
+		family_id: 'choice-1',
+		body: 'Issue 2: A crisis culture affects CPS’ ability to focus on day-to-day management activities needed to successfully perform its difficult work.'
+	},
+	{
+		id: 2,
+		family_id: 'choice-2',
+		body: 'Issue 5: CPS does not capture comprehensive information to adequately assess how well it is protecting children.'
+	}
+];
 
 const Index: NextPage = () => {
 	const [isInstructorView, setInstructorView] = useState(false);
-	const [interventionType, setInterventionType] = useState<InterventionType>('spotlight');
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [submissionError, setSubmissionError] = useState(null);
 
 	const handleToggleView = useCallback(() => {
 		setInstructorView((old) => !old);
@@ -33,18 +59,6 @@ const Index: NextPage = () => {
 					<button onClick={handleToggleView}>
 						Switch to {isInstructorView ? 'Student' : 'Instructor'} View
 					</button>
-					<label>
-						Intervention Type
-						<select
-							value={interventionType ?? ''}
-							onChange={(e) =>
-								setInterventionType(e.target.value as 'auto-open' | 'spotlight' | null)
-							}>
-							<option value="">none</option>
-							<option value="auto-open">automatically open next question if correct</option>
-							<option value="spotlight">spotlight when scrolling away</option>
-						</select>
-					</label>
 				</div>
 			</TopBar>
 			<main css={mainStyles}>
@@ -57,11 +71,16 @@ const Index: NextPage = () => {
 					`
 					}}
 				/>
-				<SQRQuestionDeck
-					poolElements={sqrQuestionPools}
-					isInstructorView={isInstructorView}
-					interventionType={interventionType}
+
+				<PollQuestion
+					questionFamilyId="prototype"
+					body={POLL_BODY}
+					online
+					choices={POLL_CHOICES}
+					submitting={isSubmitting}
+					submissionError={submissionError}
 				/>
+
 				<Text
 					online
 					element={{

@@ -2,7 +2,7 @@ import { css } from '@emotion/core';
 
 const TopBar: React.FC = ({ children }) => (
 	<header css={styles}>
-		<h1>Single Question Reset Prototype</h1>
+		<h1>Polls Refresh Prototype</h1>
 		{children}
 	</header>
 );
@@ -16,7 +16,7 @@ const styles = css`
 	height: 52px;
 	display: flex;
 	align-items: center;
-	padding-left: 143px;
+	padding-left: 8rem;
 	border-bottom: 1px solid #bebebe;
 
 	h1 {
