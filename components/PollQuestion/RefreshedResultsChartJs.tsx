@@ -44,22 +44,19 @@ const data = [
 		label: 'Issue 1',
 		class: 10,
 		texas: 20,
-		unitedStates: 70,
-		world: 40
+		unitedStates: 70
 	},
 	{
 		label: 'Issue 2',
 		class: 20,
 		texas: 30,
-		unitedStates: 50,
-		world: 10
+		unitedStates: 50
 	},
 	{
 		label: 'Issue 5',
 		class: 30,
 		texas: 10,
-		unitedStates: 60,
-		world: 20
+		unitedStates: 60
 	}
 	/*
 	{
@@ -88,7 +85,7 @@ const RefreshedResultsChartJs: React.FC<Props> = (props) => {
 	const sectionKeys = Object.keys(sections);
 
 	const xMax = width - 200;
-	const yMax = height - verticalMargin;
+	const yMax = height;
 
 	// scales, memoize for performance
 	const xScale = useMemo(
@@ -98,14 +95,6 @@ const RefreshedResultsChartJs: React.FC<Props> = (props) => {
 				range: [0, xMax]
 			}),
 		[xMax]
-	);
-
-	const yScale = useMemo(
-		() =>
-			scaleLinear<string>({
-				domain: [0, 2]
-			}),
-		[yMax]
 	);
 
 	if (!graphData) {
@@ -148,7 +137,15 @@ const RefreshedResultsChartJs: React.FC<Props> = (props) => {
 											const barX = 0;
 											const barY = calcY(groupGap, barGap, i, j, rows.length);
 
-											return (
+											return [
+												<Text
+													key={`label-${key}-${i}`}
+													x={-10}
+													y={barY + 19}
+													textAnchor="end"
+													fontSize={14}>
+													{key}
+												</Text>,
 												<Bar
 													key={`bar-${key}-${i}`}
 													x={barX}
@@ -161,24 +158,22 @@ const RefreshedResultsChartJs: React.FC<Props> = (props) => {
 													strokeWidth={1}
 													rx={3}
 												/>
-											);
+											];
 										})}
-									<Text
-										x={-60}
+									{/* <Text
+										x={-100}
 										y={calcY(
 											groupGap,
-											barGap,
+											barGap + 1,
 											i,
 											Object.keys(row).filter((k) => k !== 'label').length / 2,
 											Object.keys(row).filter((k) => k !== 'label').length
 										)}>
 										{row.label}
-									</Text>
+										</Text> */}
 								</Group>
 							);
 						})}
-
-						{/* <AxisLeft hideAxisLine hideTicks scale={yScale} /> */}
 
 						<AxisTop scale={xScale} />
 					</Group>
