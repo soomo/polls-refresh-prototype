@@ -4,8 +4,6 @@ import { schemeCategory10, schemePastel2 } from 'd3-scale-chromatic';
 import { BarGroupHorizontal, Bar } from '@visx/shape';
 import { Group } from '@visx/group';
 import { AxisBottom, AxisLeft, AxisTop } from '@visx/axis';
-import cityTemperature, { CityTemperature } from '@visx/mock-data/lib/mocks/cityTemperature';
-import letterFrequency, { LetterFrequency } from '@visx/mock-data/lib/mocks/letterFrequency';
 import { scaleBand, scaleLinear, scaleOrdinal, scalePoint } from '@visx/scale';
 import { Text } from '@visx/text';
 
@@ -74,17 +72,17 @@ const data = [
 	*/
 ];
 
-const width = 600;
+const width = 650;
 const height = data.length * 110;
 const verticalMargin = 120;
+
+const MODE: 'source' | 'section' = 'section';
 
 const RefreshedResultsChartJs: React.FC<Props> = (props) => {
 	const { data: graphData, sections } = props;
 
-	const defaultMargin = { top: 50, right: 0, bottom: 20, left: 0 };
-	const sectionKeys = Object.keys(sections);
-
-	const xMax = width - 200;
+	const horrizontalMargin = 100;
+	const xMax = width - horrizontalMargin;
 	const yMax = height;
 
 	// scales, memoize for performance
@@ -108,8 +106,11 @@ const RefreshedResultsChartJs: React.FC<Props> = (props) => {
 			<div className="poll-results" css={pollResultsStyles}>
 				<QuestionPrompt body={'Poll Responses'} />
 				<p>Compare the results below with your class, the state of Texas, and the United States.</p>
-				<svg width={width} height={height}>
-					<Group top={verticalMargin / 2} left={100}>
+				<svg
+					width={width}
+					height={height}
+					style={{ border: '1px solid black', overflow: 'visible' }}>
+					<Group top={verticalMargin / 2} left={horrizontalMargin / 1.2}>
 						{data.map((row, i) => {
 							const barHeight = 30;
 							const groupGap = 30;
@@ -141,7 +142,7 @@ const RefreshedResultsChartJs: React.FC<Props> = (props) => {
 												<Text
 													key={`label-${key}-${i}`}
 													x={-10}
-													y={barY + 19}
+													y={barY + 21}
 													textAnchor="end"
 													fontSize={14}>
 													{key}
