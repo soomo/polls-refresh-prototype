@@ -1,11 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { schemeCategory10, schemePastel2 } from 'd3-scale-chromatic';
-
-import { BarGroupHorizontal, Bar } from '@visx/shape';
-import { Group } from '@visx/group';
-import { AxisBottom, AxisLeft, AxisTop } from '@visx/axis';
-import { scaleBand, scaleLinear, scaleOrdinal, scalePoint } from '@visx/scale';
-import { Text } from '@visx/text';
+import { arc, pie } from 'd3-shape';
+import { darken } from 'polished';
+import { axisBottom, axisLeft, axisTop } from 'd3-axis';
+import { select } from 'd3-selection';
+import { transpose, max, sum, merge } from 'd3-array';
+import { scaleOrdinal, scaleBand, scaleLinear } from 'd3-scale';
+import { format } from 'd3-format';
 
 import { useIsUniversalVelvet } from '@soomo/lib/hooks';
 import { QuestionPrompt } from '@soomo/lib/components/shared/Question';
@@ -37,151 +38,160 @@ interface Props {
 	sections: Record<string, DataArray>;
 }
 
-const data = [
-	{
-		label: 'Issue 1',
-		class: 10,
-		texas: 20,
-		unitedStates: 70
-	},
-	{
-		label: 'Issue 2',
-		class: 20,
-		texas: 30,
-		unitedStates: 50
-	},
-	{
-		label: 'Issue 5',
-		class: 30,
-		texas: 10,
-		unitedStates: 60
+export const valueOf = (value: any) => {
+	if (/%$/.test(value))
+		return { type: 'percent', value: value.replace(/%$/, '') / 100, label: value };
+
+	if (/^-?\$/.test(value)) {
+		return { type: 'money', value: parseFloat(value.replace(/\$/, '')), label: value };
 	}
-	/*
-	{
-		label: 'Issue 7',
-		class: 15,
-		texas: 20,
-		unitedStates: 65
-	},
-	{
-		label: 'Issue 8',
-		class: 60,
-		texas: 35,
-		unitedStates: 5
+
+	return { type: 'number', value: parseFloat(value), label: value };
+};
+
+export const getFormat = (value: string) => {
+	switch (value) {
+		case 'percent':
+			return format('.0%');
+		default:
+			return format('');
 	}
-	*/
-];
+};
 
-const width = 650;
-const height = data.length * 110;
-const verticalMargin = 120;
+const LIGHT_TICK_COLOR = '#E6E6E6';
+const DOMAIN_LINE_COLOR = '#B3B3B3';
 
-const MODE: 'source' | 'section' = 'section';
-
-const RefreshedResultsChartJs: React.FC<Props> = (props) => {
+const RefreshedResults: React.FC<Props> = (props) => {
 	const { data: graphData, sections } = props;
+	const isUniversalVelvet = useIsUniversalVelvet();
+	const colors = isUniversalVelvet ? uvPollColors : schemeCategory10;
+	const chartData = sections['class'].map((row) => [row.label, row.data]);
 
-	const horrizontalMargin = 100;
-	const xMax = width - horrizontalMargin;
-	const yMax = height;
+	const ref = useRef();
 
-	// scales, memoize for performance
-	const xScale = useMemo(
-		() =>
-			scaleLinear<number>({
-				domain: [0, 100],
-				range: [0, xMax]
-			}),
-		[xMax]
-	);
+	const margin = { top: 20, right: 0, bottom: 40, left: 100 };
+	const width = 650 - margin.left - margin.right;
+	const height = 400 - margin.top - margin.bottom;
+
+	useEffect(() => {
+		const svg = select(ref.current);
+		svg.selectAll('*').remove();
+		draw();
+	}, []);
+
+	const draw = () => {
+		let categories: any = transpose(chartData);
+		const categoryLabels: Array<any> = categories.shift();
+		categories = transpose(categories).map((row) =>
+			row.map((value: any) => {
+				return valueOf(value);
+			})
+		);
+
+		const finalWidth = width + margin.left + margin.right;
+		const finalHeight = height + margin.top + margin.bottom;
+
+		const svg = select(ref.current)
+			.attr('width', width + margin.left + margin.right)
+			.attr('height', height + margin.top + margin.bottom)
+			.append('g')
+			.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
+			.attr('viewBox', `0 0 ${finalWidth} ${finalHeight}`);
+
+		// x axis
+		const xAxis = scaleLinear().domain([0, 100]);
+		const x = xAxis.range([0, width]);
+		const axisX = axisBottom(x)
+			.ticks(5)
+			.tickFormat((d) => `${d}%`)
+			.tickSizeOuter(0)
+			.tickSizeInner(height * 2);
+
+		svg
+			.append('g')
+			.attr('class', 'axis')
+			.attr('transform', `translate(0, 0)`)
+			.call(axisX)
+			.selectAll('text')
+			.attr('dy', `-${height * 2 + 7}px`);
+
+		// tick color
+		svg.selectAll('.tick line').attr('stroke', LIGHT_TICK_COLOR);
+
+		// extra line on-top of domain
+		svg
+			.append('line')
+			.style('stroke', DOMAIN_LINE_COLOR)
+			.style('stroke-width', 2)
+			.attr('x1', margin.left * -1)
+			.attr('y1', 0)
+			.attr('x2', width)
+			.attr('y2', 0);
+
+		/**
+		 * For last .style('text-anchor', 'end')
+		 */
+
+		const drawSections = () => {
+			Object.keys(sections).forEach((section, i) => {
+				const sectionData = sections[section];
+				const yDomainStart = (height * i) / 2;
+				const yDomainEnd = (height / 2) * (i + 1) - 30;
+
+				// Y axis
+				const y = scaleBand()
+					.range([yDomainStart, yDomainEnd])
+					.domain(sectionData.map((d) => d.label))
+					.padding(0.4);
+
+				const yAxis = axisLeft(y).tickSize(0);
+
+				// make y domain line invisible
+				svg.append('g').call(yAxis).attr('class', 'yAxis');
+				svg.selectAll('.yAxis path').attr('stroke-width', 0);
+
+				svg
+					.selectAll('myRect')
+					.data(sectionData)
+					.enter()
+					.append('rect')
+					.attr('x', x(0))
+					.attr('y', (d) => y(d.label))
+					.attr('width', (d) => x(d.data))
+					.attr('height', y.bandwidth())
+					.attr('fill', uvPollColors[i])
+					.attr('stroke', 'black')
+					.attr('stroke-width', '1px')
+					.attr('rx', 3);
+
+				// section seperation line
+				svg
+					.append('line')
+					.style('stroke', DOMAIN_LINE_COLOR)
+					.style('stroke-width', 2)
+					.attr('x1', margin.left * -1)
+					.attr('y1', yDomainEnd)
+					.attr('x2', width)
+					.attr('y2', yDomainEnd);
+			});
+		};
+
+		drawSections();
+	};
 
 	if (!graphData) {
 		return <p>No answer</p>;
 	}
-
-	//yScale.rangeRound([0, yMax]);
 
 	return (
 		<>
 			<div className="poll-results" css={pollResultsStyles}>
 				<QuestionPrompt body={'Poll Responses'} />
 				<p>Compare the results below with your class, the state of Texas, and the United States.</p>
-				<svg
-					width={width}
-					height={height}
-					style={{ border: '1px solid black', overflow: 'visible' }}>
-					<Group top={verticalMargin / 2} left={horrizontalMargin / 1.2}>
-						{data.map((row, i) => {
-							const barHeight = 30;
-							const groupGap = 30;
-							const barGap = 5;
-
-							const calcY = (
-								groupGap: number,
-								barGap: number,
-								i: number,
-								j: number,
-								rowsLength: number
-							) => {
-								return (
-									barHeight * i * rowsLength + (barHeight + barGap) * j + i * (groupGap + barGap)
-								);
-							};
-
-							return (
-								<Group key={`${row.label}-${i}`} top={10}>
-									{Object.keys(row)
-										.filter((k) => k !== 'label')
-										.map((key, j, rows) => {
-											const rowData = row[key] as number;
-											const barWidth = xScale(rowData);
-											const barX = 0;
-											const barY = calcY(groupGap, barGap, i, j, rows.length);
-
-											return [
-												<Text
-													key={`label-${key}-${i}`}
-													x={-10}
-													y={barY + 21}
-													textAnchor="end"
-													fontSize={14}>
-													{key}
-												</Text>,
-												<Bar
-													key={`bar-${key}-${i}`}
-													x={barX}
-													y={barY}
-													width={barWidth}
-													height={barHeight}
-													fill={uvPollColors[i]}
-													style={{ border: '1px solid black' }}
-													stroke="black"
-													strokeWidth={1}
-													rx={3}
-												/>
-											];
-										})}
-									{/* <Text
-										x={-100}
-										y={calcY(
-											groupGap,
-											barGap + 1,
-											i,
-											Object.keys(row).filter((k) => k !== 'label').length / 2,
-											Object.keys(row).filter((k) => k !== 'label').length
-										)}>
-										{row.label}
-										</Text> */}
-								</Group>
-							);
-						})}
-
-						<AxisTop scale={xScale} />
-					</Group>
-				</svg>
+				<svg ref={ref} style={{ border: '1px solid #00000022', overflowX: 'visible' }} />
 			</div>
 		</>
 	);
 };
 
-export default RefreshedResultsChartJs;
+export default RefreshedResults;
