@@ -1,11 +1,6 @@
 import { css } from '@emotion/core';
 
-const TopBar: React.FC = ({ children }) => (
-	<header css={styles}>
-		<h1>Polls Refresh Prototype</h1>
-		{children}
-	</header>
-);
+const TopBar: React.FC = ({ children }) => <header css={styles}>{children}</header>;
 export default TopBar;
 
 const styles = css`

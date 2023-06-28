@@ -1,5 +1,3 @@
-import sqrQuestionPools from '../../fixtures/sqrQuestionPools';
-
 import type { NextApiHandler } from 'next';
 
 export interface SavePollResponse {
@@ -8,21 +6,19 @@ export interface SavePollResponse {
 
 const handler: NextApiHandler<SavePollResponse> = (req, res) => {
 	if (req.method === 'POST') {
-		const { choice_family_id: choiceFamilyId } = JSON.parse(req.body);
-
 		res.status(200).json({
 			graph_data: [
 				{
-					label: 'a',
-					data: 0
+					label: 'Issue 1',
+					data: 10
 				},
 				{
-					label: 'bc',
-					data: 1
+					label: 'Issue 2',
+					data: 20
 				},
 				{
-					label: 'cc',
-					data: 0
+					label: 'Issue 5',
+					data: 15
 				}
 			]
 		});

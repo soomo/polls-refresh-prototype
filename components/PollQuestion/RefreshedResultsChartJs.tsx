@@ -36,6 +36,7 @@ type DataArray = Array<{
 interface Props {
 	data: DataArray;
 	sections: Record<string, DataArray>;
+	orderedChoices: string[];
 }
 
 export const valueOf = (value: any) => {
@@ -61,17 +62,21 @@ export const getFormat = (value: string) => {
 const LIGHT_TICK_COLOR = '#E6E6E6';
 const DOMAIN_LINE_COLOR = '#B3B3B3';
 
+const shapedData = [
+	['class', 'texas', 'usa'],
+	[35, 40, 80],
+	[15, 50, 20],
+	[30, 10, 10]
+];
+
 const RefreshedResults: React.FC<Props> = (props) => {
-	const { data: graphData, sections } = props;
-	const isUniversalVelvet = useIsUniversalVelvet();
-	const colors = isUniversalVelvet ? uvPollColors : schemeCategory10;
-	const chartData = sections['class'].map((row) => [row.label, row.data]);
+	const { data: graphData, sections, orderedChoices } = props;
 
 	const ref = useRef();
 
-	const margin = { top: 20, right: 0, bottom: 40, left: 100 };
+	const margin = { top: 20, right: 0, bottom: 40, left: 140 };
 	const width = 650 - margin.left - margin.right;
-	const height = 400 - margin.top - margin.bottom;
+	const height = 600 - margin.top - margin.bottom;
 
 	useEffect(() => {
 		const svg = select(ref.current);
@@ -80,14 +85,6 @@ const RefreshedResults: React.FC<Props> = (props) => {
 	}, []);
 
 	const draw = () => {
-		let categories: any = transpose(chartData);
-		const categoryLabels: Array<any> = categories.shift();
-		categories = transpose(categories).map((row) =>
-			row.map((value: any) => {
-				return valueOf(value);
-			})
-		);
-
 		const finalWidth = width + margin.left + margin.right;
 		const finalHeight = height + margin.top + margin.bottom;
 
@@ -132,25 +129,110 @@ const RefreshedResults: React.FC<Props> = (props) => {
 		 * For last .style('text-anchor', 'end')
 		 */
 
+		console.log(graphData);
+
+		const getGroupByChoice = (choice: string) => {
+			const choiceIndex = orderedChoices.indexOf(choice);
+			const group = shapedData[choiceIndex + 1];
+			return group;
+		};
+
+		const getGroupByData = (section: string) => {
+			const groupIndex = (shapedData[0] as string[]).indexOf(section);
+			const group = shapedData
+				.filter((g, i) => (i == 0 ? false : true))
+				.map((group) => group[groupIndex]);
+			return group;
+		};
+
 		const drawSections = () => {
+			const groupMargin = { top: 50, bottom: 40 };
+			const barHeight = 24;
+
+			const groupScaleY = scaleBand()
+				.range([margin.top + groupMargin.top, height])
+				.domain(shapedData[0] as string[])
+				.padding(0.5);
+
+			const datasets = shapedData[0] as string[];
+
+			const something = datasets.map((dataset, datasetIndex) => {
+				// get a group in order of question choice from a section of the dataset
+				const group = getGroupByData(dataset);
+				const topOfGroupY = groupScaleY(dataset) - groupScaleY.step();
+
+				/**
+				 * inner y-axis
+				 */
+				const y = scaleBand()
+					.range([topOfGroupY, groupScaleY(dataset)])
+					.domain(orderedChoices)
+					.padding(0.5);
+				const yAxis = axisLeft(y).tickSize(0);
+
+				// draw labels, make y domain line invisible
+				svg.append('g').call(yAxis).attr('class', 'yAxis').attr('font-size', '10px');
+				svg.selectAll('.yAxis path').attr('stroke-width', 0);
+
+				// draw bars
+				svg
+					.append('g')
+					.selectAll('bars')
+					.data(group)
+					.enter()
+					.append('rect')
+					.attr('x', x(0))
+					.attr('y', (d, i) => y(orderedChoices[i]) - 2)
+					.attr('width', (d) => x(d as number))
+					.attr('height', barHeight)
+					.attr('fill', uvPollColors[datasetIndex])
+					.attr('stroke', 'black')
+					.attr('stroke-width', '1px')
+					.attr('rx', 3);
+
+				// draw divider line
+				svg
+					.append('line')
+					.style('stroke', DOMAIN_LINE_COLOR)
+					.style('stroke-width', 2)
+					.attr('x1', margin.left * -1)
+					.attr('y1', groupScaleY(dataset))
+					.attr('x2', width)
+					.attr('y2', groupScaleY(dataset));
+
+				// draw dataset label
+				svg
+					.append('text')
+					.text(dataset.toUpperCase())
+					.attr('font-weight', 'bold')
+					.attr('x', -(margin.left + margin.right))
+					.attr('y', topOfGroupY + 10)
+					.attr('dx', 0)
+					.attr('dy', 24);
+			});
+
+			return;
+
 			Object.keys(sections).forEach((section, i) => {
 				const sectionData = sections[section];
-				const yDomainStart = (height * i) / 2;
+
+				const yDomainStart = groupMargin.top + (barHeight + groupMargin.bottom) * i;
 				const yDomainEnd = (height / 2) * (i + 1) - 30;
 
 				// Y axis
 				const y = scaleBand()
 					.range([yDomainStart, yDomainEnd])
 					.domain(sectionData.map((d) => d.label))
-					.padding(0.4);
+					.padding(0.5);
 
 				const yAxis = axisLeft(y).tickSize(0);
 
 				// make y domain line invisible
-				svg.append('g').call(yAxis).attr('class', 'yAxis');
+				svg.append('g').call(yAxis).attr('class', 'yAxis').attr('font-size', '10px');
 				svg.selectAll('.yAxis path').attr('stroke-width', 0);
 
 				svg
+					.append('g')
 					.selectAll('myRect')
 					.data(sectionData)
 					.enter()
@@ -158,7 +240,7 @@ const RefreshedResults: React.FC<Props> = (props) => {
 					.attr('x', x(0))
 					.attr('y', (d) => y(d.label))
 					.attr('width', (d) => x(d.data))
-					.attr('height', y.bandwidth())
+					.attr('height', barHeight)
 					.attr('fill', uvPollColors[i])
 					.attr('stroke', 'black')
 					.attr('stroke-width', '1px')
@@ -188,7 +270,7 @@ const RefreshedResults: React.FC<Props> = (props) => {
 			<div className="poll-results" css={pollResultsStyles}>
 				<QuestionPrompt body={'Poll Responses'} />
 				<p>Compare the results below with your class, the state of Texas, and the United States.</p>
-				<svg ref={ref} style={{ border: '1px solid #00000022', overflowX: 'visible' }} />
+				<svg ref={ref} style={{ border: '1px solid #00000009', overflowX: 'visible' }} />
 			</div>
 		</>
 	);

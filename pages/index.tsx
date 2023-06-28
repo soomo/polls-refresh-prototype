@@ -29,36 +29,127 @@ const POLL_CHOICES = [
 	{
 		id: 0,
 		family_id: 'choice-0',
-		body: 'Issue 1: Efforts to reduce turnover of CPS caseworkers fail to address key reasons many staff leave.'
+		body: 'Issue 1'
 	},
 	{
 		id: 1,
 		family_id: 'choice-1',
-		body: 'Issue 2: A crisis culture affects CPS’ ability to focus on day-to-day management activities needed to successfully perform its difficult work.'
+		body: 'Issue 2'
 	},
 	{
 		id: 2,
 		family_id: 'choice-2',
-		body: 'Issue 5: CPS does not capture comprehensive information to adequately assess how well it is protecting children.'
+		body: 'Issue 5'
 	}
 ];
 
 const Index: NextPage = () => {
+	const [viewMode, setViewMode] = useState<'source' | 'section'>('source');
 	const [isInstructorView, setInstructorView] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [submissionError, setSubmissionError] = useState(null);
+	const [answer, setAnswer] = useState({
+		id: 123456789,
+		body: 'choice-1',
+		question_family_id: 'prototype',
+		updated_at: new Date().toISOString(),
+		completed: true,
+		data: {
+			class: [
+				{
+					label: 'Issue 1',
+					data: 35
+				},
+				{
+					label: 'Issue 2',
+					data: 15
+				},
+				{
+					label: 'Issue 5',
+					data: 30
+				}
+			],
+			texas: [
+				{
+					label: 'Issue 1',
+					data: 40
+				},
+				{
+					label: 'Issue 2',
+					data: 50
+				},
+				{
+					label: 'Issue 5',
+					data: 10
+				}
+			]
+			/*
+			unitedStates: [
+				{
+					label: 'Issue 1',
+					data: 80
+				},
+				{
+					label: 'Issue 2',
+					data: 20
+				},
+				{
+					label: 'Issue 5',
+					data: 10
+				}
+			]
+			*/
+		}
+	});
 
 	const handleToggleView = useCallback(() => {
 		setInstructorView((old) => !old);
 	}, []);
 
+	const onChoiceSelected = (choice: string) => {
+		setIsSubmitting(true);
+		setSubmissionError(null);
+
+		fetch('/api/savePoll', {
+			method: 'POST',
+			body: JSON.stringify({
+				choice_family_id: choice
+			})
+		})
+			.then((res) => res.json())
+			.then((res) => {
+				console.log(res);
+				setAnswer({
+					id: 123456789,
+					body: choice,
+					question_family_id: 'prototype',
+					updated_at: new Date().toISOString(),
+					completed: true,
+					data: res.graph_data
+				});
+			})
+			.finally(() => {
+				setIsSubmitting(false);
+			});
+	};
+
 	return (
 		<ThemeProvider theme={themes['universal_velvet']}>
 			<TopBar>
 				<div css={knobsStyles}>
+					<h1>Polls refresh prototype</h1>
 					<button onClick={handleToggleView}>
 						Switch to {isInstructorView ? 'Student' : 'Instructor'} View
 					</button>
+					<label>
+						View mode
+						<select
+							value={viewMode ?? ''}
+							onChange={(e) => setViewMode(e.target.value as 'source' | 'section')}>
+							<option value="source">group by data source</option>
+							<option value="section">group by section of the data</option>
+						</select>
+					</label>
 				</div>
 			</TopBar>
 			<main css={mainStyles}>
@@ -67,7 +158,7 @@ const Index: NextPage = () => {
 					element={{
 						body: `
 						<h1>Sample Page</h1>
-						<p>Praesent arcu lectus, aliquam id faucibus nec, varius non est. Praesent et leo eu purus venenatis bibendum ut eget metus. Curabitur eget quam non quam mattis semper vel quis sapien. Aenean sodales velit nec fermentum blandit. Proin congue id nisi sit amet aliquam. Phasellus blandit risus vel iaculis congue. Aenean tempor arcu libero, euismod ultricies sapien mollis sit amet. Donec in consequat dolor. Ut id finibus sem. Aenean quis nisi ante. Duis interdum placerat erat, at dignissim dolor laoreet quis. Proin mollis nunc risus, id suscipit dolor auctor iaculis.</p>
+						<p>Praesent arcu lectus, aliquam id faucibus nec, varius non est. Praesent et leo eu purus venenatis bibendum ut eget metus..</p>
 					`
 					}}
 				/>
@@ -75,17 +166,19 @@ const Index: NextPage = () => {
 				<PollQuestion
 					questionFamilyId="prototype"
 					body={POLL_BODY}
+					answer={answer}
 					online
 					choices={POLL_CHOICES}
 					submitting={isSubmitting}
 					submissionError={submissionError}
+					onChoiceSelected={onChoiceSelected}
 				/>
 
 				<Text
 					online
 					element={{
 						body: `
-						<p>Pellentesque elementum tincidunt dolor. Nunc lacinia in libero non efficitur. In vitae arcu eros. Donec tincidunt purus in est porttitor ornare. Sed commodo lacus a dolor molestie, a tincidunt tellus molestie. Cras tempor lacus in libero luctus, nec consequat dui pharetra. Nulla at nunc mauris. Cras nisi dui, dictum et maximus non, ultricies nec nisl. Fusce vel imperdiet lectus. Aliquam vel dolor sem. In non sodales ex. Fusce lacus ligula, mollis sit amet vestibulum et, sodales ac ante.</p>
+						<p>Pellentesque elementum tincidunt dolor. Nunc lacinia in libero non efficitur. In vitae arcu eros. Donec tincidunt purus in est porttitor ornare. Sed commodo lacus a dolor molestie, a tincidunt tellus molestie.</p>
 					`
 					}}
 				/>

@@ -6,7 +6,7 @@ export const pollResultsStyles = (theme) => {
 	return css`
 		padding: 30px;
 		margin: 30px 0;
-		background-color: ${theme.colors.white};
+		background-color: #fff;
 		display: flex;
 		flex-wrap: wrap;
 
@@ -22,10 +22,10 @@ export const pollResultsStyles = (theme) => {
 		}
 
 		svg {
-			max-width: 300px;
-			min-height: 206px;
+			// max-width: 300px;
+			min-height: 600px;
 			flex-shrink: 0;
-			margin: auto;
+			//margin: auto;
 
 			@media (max-width: ${breakpoints.small}) {
 				margin: 1em auto;
@@ -74,6 +74,22 @@ export const pollResultsStyles = (theme) => {
 						width: 14px;
 						height: 14px;
 					}
+				}
+			}
+		}
+
+		.axis {
+			font-size: 14px;
+
+			.tick:last-of-type {
+				text {
+					text-anchor: end;
+				}
+			}
+
+			.tick:first-of-type {
+				text {
+					text-anchor: start;
 				}
 			}
 		}

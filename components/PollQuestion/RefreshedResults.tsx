@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { schemeCategory10, schemePastel2 } from 'd3-scale-chromatic';
 import { arc, pie } from 'd3-shape';
 import { darken } from 'polished';
+import { axisBottom, axisLeft, axisTop } from 'd3-axis';
 import { select } from 'd3-selection';
 import { transpose, max, sum, merge } from 'd3-array';
 import { scaleOrdinal, scaleBand, scaleLinear } from 'd3-scale';
@@ -27,11 +28,14 @@ const uvPollColors = [
 	'#010001'
 ];
 
+type DataArray = Array<{
+	label: string;
+	data: number;
+}>;
+
 interface Props {
-	data: Array<{
-		label: string;
-		data: number;
-	}>;
+	data: DataArray;
+	sections: Record<string, DataArray>;
 }
 
 export const valueOf = (value: any) => {
@@ -55,97 +59,24 @@ export const getFormat = (value: string) => {
 };
 
 const RefreshedResults: React.FC<Props> = (props) => {
-	const { data: graphData } = props;
+	const { data: graphData, sections } = props;
 	const isUniversalVelvet = useIsUniversalVelvet();
 	const colors = isUniversalVelvet ? uvPollColors : schemeCategory10;
-	const chartData = graphData.map((row) => [row.label, row.data]);
+	const chartData = sections['class'].map((row) => [row.label, row.data]);
 
 	const ref = useRef();
 
-	const margin = { top: 20, right: 30, bottom: 40, left: 90 };
-	const width = 460 - margin.left - margin.right;
+	const margin = { top: 20, right: 0, bottom: 40, left: 100 };
+	const width = 600 - margin.left - margin.right;
 	const height = 400 - margin.top - margin.bottom;
-	const color: any = scaleOrdinal().range(20);
-	const pattern: any = scaleOrdinal().range(20);
-
-	const seriesLabels = chartData.shift().slice(1);
-	let categories: any = transpose(chartData);
-	const categoryLabels: Array<any> = categories.shift();
-	categories = transpose(categories).map((row) =>
-		row.map((value: any) => {
-			return valueOf(value);
-		})
-	);
-
-	const groupsScale = scaleBand().domain(categoryLabels);
-	const seriesScale = scaleBand().domain(seriesLabels);
-	const valuesScale = scaleLinear();
-	const valueType = categories[0][0].type;
-	const formatValue = getFormat(valueType);
-
-	const viewBoxWidth = 700;
-	const viewBoxHeight = 400;
-
-	const svg = select(ref.current)
-		.attr('class', 'chart')
-		.attr('viewBox', `0 0 ${viewBoxWidth} ${viewBoxHeight}`)
-		.attr('preserveAspectRatio', 'xMidYMid meet')
-		.append('g');
-
-	const drawGroupedChart = ({
-		svg,
-		categories,
-		color,
-		pattern,
-		transform,
-		x,
-		y,
-		width,
-		height,
-		labelX,
-		labelY,
-		labelDX,
-		labelDY,
-		format
-	}) => {
-		console.log('draw it');
-
-		const group = svg
-			.selectAll('.groups')
-			.data(categories)
-			.enter()
-			.append('g')
-			.attr('class', 'g')
-			.attr('transform', transform);
-
-		const horizontalGrouped = group
-			.selectAll('rect')
-			.data((d: any) => d)
-			.enter()
-			.append('rect')
-			.attr('x', x)
-			.attr('y', y)
-			.attr('width', width)
-			.attr('height', height);
-
-		horizontalGrouped.style('fill', (d, i) => color(i)).style('stroke', (d, i) => color(i));
-
-		group
-			.selectAll('text')
-			.data((d: any) => d)
-			.enter()
-			.append('text')
-			.attr('class', 'label')
-			.attr('x', labelX)
-			.attr('y', labelY)
-			.attr('dx', labelDX)
-			.attr('dy', labelDY)
-			.attr('text-anchor', 'middle')
-			.attr('alignment-baseline', 'middle')
-			.text((d: any) => format(d.value));
-	};
 
 	useEffect(() => {
+		const svg = select(ref.current);
+		svg.selectAll('*').remove();
+		draw();
+	}, []);
+
+	const draw = () => {
 		let categories: any = transpose(chartData);
 		const categoryLabels: Array<any> = categories.shift();
 		categories = transpose(categories).map((row) =>
@@ -154,26 +85,69 @@ const RefreshedResults: React.FC<Props> = (props) => {
 			})
 		);
 
-		console.log({ categories, categoryLabels });
+		const finalWidth = width + margin.left + margin.right;
+		const finalHeight = height + margin.top + margin.bottom;
 
-		drawGroupedChart({
-			svg,
-			categories,
-			color,
-			pattern,
-			transform: (d, i) => `translate(0, ${groupsScale(categoryLabels[i])})`,
-			x: (d: any) => (d.value < 0 ? -Math.abs(valuesScale(d.value) - valuesScale(0)) : 0),
-			y: (d, i) => seriesScale(seriesLabels[i]),
-			width: (d: any) =>
-				d.value < 0 ? Math.abs(valuesScale(d.value) - valuesScale(0)) : valuesScale(d.value),
-			height: seriesScale.bandwidth(),
-			labelX: (d: any) => valuesScale(d.value) + 3,
-			labelY: (d, i) => seriesScale(seriesLabels[i]),
-			labelDX: '1.1em',
-			labelDY: seriesScale.bandwidth() / 2,
-			format: formatValue
-		});
-	}, []);
+		const svg = select(ref.current)
+			.attr('width', width + margin.left + margin.right)
+			.attr('height', height + margin.top + margin.bottom)
+			.append('g')
+			.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
+			.attr('viewBox', `0 0 ${finalWidth} ${finalHeight}`);
+
+		// x axis
+		const xAxis = scaleLinear().domain([0, 100]);
+		const x = xAxis.range([0, width]);
+		const axisX = axisTop(x)
+			.ticks(5)
+			.tickFormat((d) => `${d}%`);
+
+		svg
+			.append('g')
+			.attr('class', 'axis')
+			.attr('transform', `translate(0, 0)`)
+			.call(axisX)
+			.selectAll('text');
+
+		const drawSections = () => {
+			Object.keys(sections).forEach((section, i) => {
+				const sectionData = sections[section];
+				const yGap = 15 * i;
+
+				//.range([height / 2, height])
+
+				// Y axis
+				const y = scaleBand()
+					.range([(height * i) / 2, (height / 2) * (i + 1) - 30])
+					.domain(sectionData.map((d) => d.label))
+					.padding(0.4);
+
+				svg.append('g').call(axisLeft(y)).attr('transform', `translate(0, ${yGap})`);
+
+				svg
+					.selectAll('myRect')
+					.data(sectionData)
+					.enter()
+					.append('rect')
+					.attr('x', x(0))
+					.attr('y', function (d) {
+						console.log({ d });
+						return y(d.label);
+					})
+					.attr('width', function (d) {
+						return x(d.data);
+					})
+					.attr('height', y.bandwidth())
+					.attr('fill', uvPollColors[i])
+					.attr('stroke', 'black')
+					.attr('stroke-width', '1px')
+					.attr('transform', `translate(0, ${yGap})`)
+					.attr('rx', 3);
+			});
+		};
+
+		drawSections();
+	};
 
 	if (!graphData) {
 		return <p>No answer</p>;
@@ -184,7 +158,7 @@ const RefreshedResults: React.FC<Props> = (props) => {
 			<div className="poll-results" css={pollResultsStyles}>
 				<QuestionPrompt body={'Poll Responses'} />
 				<p>Compare the results below with your class, the state of Texas, and the United States.</p>
-				<svg ref={ref} />
+				<svg ref={ref} style={{ border: '1px solid black', overflow: 'visible' }} />
 			</div>
 		</>
 	);

@@ -18,15 +18,16 @@ import { FamilyId, QuestionChoice } from '@soomo/lib/types/WebtextManifest';
 import { formatTimeFromNow } from '@soomo/lib/utils/formatting';
 
 import PollResults from './PollResults';
+import RefreshedResults from './RefreshedResults';
 import styles from './styles';
+import RefreshedResultsChartJs from './RefreshedResultsChartJs';
 
 interface Props {
 	questionFamilyId: string;
 	body: string;
 	choices: QuestionChoice[];
 	answer?: Answer;
-	// eslint-disable-next-line @typescript-eslint/ban-types
-	onChoiceSelected?: Function;
+	onChoiceSelected?: (family_id: string) => void;
 	onChangeSelectedOption?: (family_id: string) => void;
 	online: boolean;
 	submitting: boolean;
@@ -53,7 +54,7 @@ const PollQuestion: React.FC<Props> = (props) => {
 		mobile,
 		readOnly
 	} = props;
-	const [selectedOption, setSelectedOption] = useState(null);
+	const [selectedOption, setSelectedOption] = useState<string>(null);
 	const [userActed, setUserActed] = useState(false);
 	const [headingRef, setFocusToHeading] = useAccessibilityFocus();
 	const completedAnswer = answer && answer.completed;
@@ -137,7 +138,13 @@ const PollQuestion: React.FC<Props> = (props) => {
 						)}
 						{completedAnswerWithData && (
 							<div>
-								<PollResults data={answer.data} />
+								{/* <PollResults data={answer.data} /> */}
+								{/* <RefreshedResults data={answer.data} sections={answer.data} /> */}
+								<RefreshedResultsChartJs
+									data={answer.data}
+									sections={answer.data}
+									orderedChoices={choices.map((c) => c.body)}
+								/>
 								{answer.updated_at && (
 									<div className="save-button-container">
 										Last saved {formatTimeFromNow({ time: answer.updated_at })}
