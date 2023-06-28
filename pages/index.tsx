@@ -143,9 +143,9 @@ const Index: NextPage = () => {
 			<TopBar>
 				<div css={knobsStyles}>
 					<h1>Polls refresh prototype</h1>
-					<button onClick={handleToggleView}>
+					{/*<button onClick={handleToggleView}>
 						Switch to {isInstructorView ? 'Student' : 'Instructor'} View
-					</button>
+					</button>*/}
 					<label>
 						View mode
 						<select
