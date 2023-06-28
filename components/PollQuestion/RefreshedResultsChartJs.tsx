@@ -144,94 +144,32 @@ const RefreshedResults: React.FC<Props> = (props) => {
 		/**
 		 * Will get rid of repeated code later
 		 */
+		const groupMargin = { top: 50, bottom: 40 };
+		const barHeight = 24;
 
-		const drawSectionsByDataset = () => {
-			const groupMargin = { top: 50, bottom: 40 };
-			const barHeight = 24;
+		const drawSections = () => {
+			const groupScaleYDomain =
+				viewMode === 'response' ? orderedChoices : (shapedData[0] as string[]);
 
 			const groupScaleY = scaleBand()
 				.range([margin.top + groupMargin.top, height])
-				.domain(shapedData[0] as string[])
+				.domain(groupScaleYDomain)
 				.padding(0.5);
 
-			const datasets = shapedData[0] as string[];
+			const modeData = viewMode === 'response' ? orderedChoices : (shapedData[0] as string[]);
 
-			datasets.map((dataset, datasetIndex) => {
+			modeData.map((datad, datadIndex) => {
 				// get a group in order of question choice from a section of the dataset
-				const group = getGroupByData(dataset);
-				const topOfGroupY = groupScaleY(dataset) - groupScaleY.step();
+				const group = viewMode === 'response' ? getGroupByChoice(datad) : getGroupByData(datad);
+				const topOfGroupY = groupScaleY(datad) - groupScaleY.step();
 
 				/**
 				 * inner y-axis
 				 */
 				const y = scaleBand()
-					.range([topOfGroupY, groupScaleY(dataset)])
-					.domain(orderedChoices)
+					.range([topOfGroupY, groupScaleY(datad)])
+					.domain(viewMode === 'response' ? (shapedData[0] as string[]) : orderedChoices)
 					.padding(0.5);
-				const yAxis = axisLeft(y).tickSize(0);
-
-				// draw labels, make y domain line invisible
-				svg.append('g').call(yAxis).attr('class', 'yAxis').attr('font-size', '10px');
-				svg.selectAll('.yAxis path').attr('stroke-width', 0);
-
-				// draw bars
-				svg
-					.append('g')
-					.selectAll('bars')
-					.data(group)
-					.enter()
-					.append('rect')
-					.attr('x', x(0))
-					.attr('y', (d, i) => y(orderedChoices[i]) - 2)
-					.attr('width', (d) => x(d as number))
-					.attr('height', barHeight)
-					.attr('fill', uvPollColors[datasetIndex])
-					.attr('stroke', 'black')
-					.attr('stroke-width', '1px')
-					.attr('rx', 3);
-
-				// draw divider line
-				svg
-					.append('line')
-					.style('stroke', DOMAIN_LINE_COLOR)
-					.style('stroke-width', 2)
-					.attr('x1', margin.left * -1)
-					.attr('y1', groupScaleY(dataset))
-					.attr('x2', width)
-					.attr('y2', groupScaleY(dataset));
-
-				// draw dataset label
-				svg
-					.append('text')
-					.text(dataset.toUpperCase())
-					.attr('font-weight', 'bold')
-					.attr('x', -(margin.left + margin.right))
-					.attr('y', topOfGroupY + 10)
-					.attr('dx', 0)
-					.attr('dy', 24);
-			});
-		};
-
-		const drawSectionsByResponse = () => {
-			const groupMargin = { top: 50, bottom: 40 };
-			const barHeight = 24;
-
-			const groupScaleY = scaleBand()
-				.range([margin.top + groupMargin.top, height])
-				.domain(orderedChoices)
-				.padding(0.5);
-
-			orderedChoices.map((choice, choiceIndex) => {
-				const group = getGroupByChoice(choice) as number[];
-				const topOfGroupY = groupScaleY(choice) - groupScaleY.step();
-
-				/**
-				 * inner y-axis
-				 */
-				const y = scaleBand()
-					.range([topOfGroupY, groupScaleY(choice)])
-					.domain(shapedData[0] as string[])
-					.padding(0.3); // padding should be based on how many something are in a second, as a fractional percentage
 
 				const yAxis = axisLeft(y).tickSize(0);
 
@@ -247,10 +185,14 @@ const RefreshedResults: React.FC<Props> = (props) => {
 					.enter()
 					.append('rect')
 					.attr('x', x(0))
-					.attr('y', (d, i) => y(shapedData[0][i] as string))
+					.attr(
+						'y',
+						(d, i) =>
+							y(viewMode === 'response' ? (shapedData[0][i] as string) : orderedChoices[i]) - 2
+					)
 					.attr('width', (d) => x(d as number))
 					.attr('height', barHeight)
-					.attr('fill', uvPollColors[choiceIndex])
+					.attr('fill', uvPollColors[datadIndex])
 					.attr('stroke', 'black')
 					.attr('stroke-width', '1px')
 					.attr('rx', 3);
@@ -261,14 +203,14 @@ const RefreshedResults: React.FC<Props> = (props) => {
 					.style('stroke', DOMAIN_LINE_COLOR)
 					.style('stroke-width', 2)
 					.attr('x1', margin.left * -1)
-					.attr('y1', groupScaleY(choice))
+					.attr('y1', groupScaleY(datad))
 					.attr('x2', width)
-					.attr('y2', groupScaleY(choice));
+					.attr('y2', groupScaleY(datad));
 
 				// draw dataset label
 				svg
 					.append('text')
-					.text(choice.toUpperCase())
+					.text(datad.toUpperCase())
 					.attr('font-weight', 'bold')
 					.attr('x', -(margin.left + margin.right))
 					.attr('y', topOfGroupY + 10)
@@ -277,11 +219,7 @@ const RefreshedResults: React.FC<Props> = (props) => {
 			});
 		};
 
-		if (viewMode === 'dataset') {
-			drawSectionsByDataset();
-		} else {
-			drawSectionsByResponse();
-		}
+		drawSections();
 	};
 
 	if (!graphData) {
