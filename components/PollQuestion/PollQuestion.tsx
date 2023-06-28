@@ -34,6 +34,7 @@ interface Props {
 	submissionError: Error;
 	mobile?: boolean;
 	readOnly?: boolean;
+	viewMode: 'response' | 'dataset';
 	/**
 	 * Temporary
 	 */
@@ -52,7 +53,8 @@ const PollQuestion: React.FC<Props> = (props) => {
 		submissionError,
 		submitting,
 		mobile,
-		readOnly
+		readOnly,
+		viewMode
 	} = props;
 	const [selectedOption, setSelectedOption] = useState<string>(null);
 	const [userActed, setUserActed] = useState(false);
@@ -144,6 +146,7 @@ const PollQuestion: React.FC<Props> = (props) => {
 									data={answer.data}
 									sections={answer.data}
 									orderedChoices={choices.map((c) => c.body)}
+									viewMode={viewMode}
 								/>
 								{answer.updated_at && (
 									<div className="save-button-container">

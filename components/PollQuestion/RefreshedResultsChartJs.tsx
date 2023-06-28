@@ -37,6 +37,7 @@ interface Props {
 	data: DataArray;
 	sections: Record<string, DataArray>;
 	orderedChoices: string[];
+	viewMode: 'response' | 'dataset';
 }
 
 export const valueOf = (value: any) => {
@@ -66,11 +67,12 @@ const shapedData = [
 	['class', 'texas', 'usa'],
 	[35, 40, 80],
 	[15, 50, 20],
-	[30, 10, 10]
+	[30, 10, 10],
+	[60, 20, 27]
 ];
 
 const RefreshedResults: React.FC<Props> = (props) => {
-	const { data: graphData, sections, orderedChoices } = props;
+	const { data: graphData, sections, orderedChoices, viewMode } = props;
 
 	const ref = useRef();
 
@@ -82,7 +84,7 @@ const RefreshedResults: React.FC<Props> = (props) => {
 		const svg = select(ref.current);
 		svg.selectAll('*').remove();
 		draw();
-	}, []);
+	}, [viewMode]);
 
 	const draw = () => {
 		const finalWidth = width + margin.left + margin.right;
@@ -125,12 +127,6 @@ const RefreshedResults: React.FC<Props> = (props) => {
 			.attr('x2', width)
 			.attr('y2', 0);
 
-		/**
-		 * For last .style('text-anchor', 'end')
-		 */
-
-		console.log(graphData);
-
 		const getGroupByChoice = (choice: string) => {
 			const choiceIndex = orderedChoices.indexOf(choice);
 			const group = shapedData[choiceIndex + 1];
@@ -145,7 +141,11 @@ const RefreshedResults: React.FC<Props> = (props) => {
 			return group;
 		};
 
-		const drawSections = () => {
+		/**
+		 * Will get rid of repeated code later
+		 */
+
+		const drawSectionsByDataset = () => {
 			const groupMargin = { top: 50, bottom: 40 };
 			const barHeight = 24;
 
@@ -156,7 +156,7 @@ const RefreshedResults: React.FC<Props> = (props) => {
 
 			const datasets = shapedData[0] as string[];
 
-			const something = datasets.map((dataset, datasetIndex) => {
+			datasets.map((dataset, datasetIndex) => {
 				// get a group in order of question choice from a section of the dataset
 				const group = getGroupByData(dataset);
 				const topOfGroupY = groupScaleY(dataset) - groupScaleY.step();
@@ -210,55 +210,78 @@ const RefreshedResults: React.FC<Props> = (props) => {
 					.attr('dx', 0)
 					.attr('dy', 24);
 			});
+		};
 
-			return;
+		const drawSectionsByResponse = () => {
+			const groupMargin = { top: 50, bottom: 40 };
+			const barHeight = 24;
 
-			Object.keys(sections).forEach((section, i) => {
-				const sectionData = sections[section];
+			const groupScaleY = scaleBand()
+				.range([margin.top + groupMargin.top, height])
+				.domain(orderedChoices)
+				.padding(0.5);
 
-				const yDomainStart = groupMargin.top + (barHeight + groupMargin.bottom) * i;
-				const yDomainEnd = (height / 2) * (i + 1) - 30;
+			orderedChoices.map((choice, choiceIndex) => {
+				const group = getGroupByChoice(choice) as number[];
+				const topOfGroupY = groupScaleY(choice) - groupScaleY.step();
 
-				// Y axis
+				/**
+				 * inner y-axis
+				 */
 				const y = scaleBand()
-					.range([yDomainStart, yDomainEnd])
-					.domain(sectionData.map((d) => d.label))
-					.padding(0.5);
+					.range([topOfGroupY, groupScaleY(choice)])
+					.domain(shapedData[0] as string[])
+					.padding(0.3); // padding should be based on how many something are in a second, as a fractional percentage
 
 				const yAxis = axisLeft(y).tickSize(0);
 
-				// make y domain line invisible
+				// draw labels, make y domain line invisible
 				svg.append('g').call(yAxis).attr('class', 'yAxis').attr('font-size', '10px');
 				svg.selectAll('.yAxis path').attr('stroke-width', 0);
 
+				// draw bars
 				svg
 					.append('g')
-					.selectAll('myRect')
-					.data(sectionData)
+					.selectAll('bars')
+					.data(group)
 					.enter()
 					.append('rect')
 					.attr('x', x(0))
-					.attr('y', (d) => y(d.label))
-					.attr('width', (d) => x(d.data))
+					.attr('y', (d, i) => y(shapedData[0][i] as string))
+					.attr('width', (d) => x(d as number))
 					.attr('height', barHeight)
-					.attr('fill', uvPollColors[i])
+					.attr('fill', uvPollColors[choiceIndex])
 					.attr('stroke', 'black')
 					.attr('stroke-width', '1px')
 					.attr('rx', 3);
 
-				// section seperation line
+				// draw divider line
 				svg
 					.append('line')
 					.style('stroke', DOMAIN_LINE_COLOR)
 					.style('stroke-width', 2)
 					.attr('x1', margin.left * -1)
-					.attr('y1', yDomainEnd)
+					.attr('y1', groupScaleY(choice))
 					.attr('x2', width)
-					.attr('y2', yDomainEnd);
+					.attr('y2', groupScaleY(choice));
+
+				// draw dataset label
+				svg
+					.append('text')
+					.text(choice.toUpperCase())
+					.attr('font-weight', 'bold')
+					.attr('x', -(margin.left + margin.right))
+					.attr('y', topOfGroupY + 10)
+					.attr('dx', 0)
+					.attr('dy', 24);
 			});
 		};
 
-		drawSections();
+		if (viewMode === 'dataset') {
+			drawSectionsByDataset();
+		} else {
+			drawSectionsByResponse();
+		}
 	};
 
 	if (!graphData) {

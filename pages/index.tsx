@@ -40,11 +40,16 @@ const POLL_CHOICES = [
 		id: 2,
 		family_id: 'choice-2',
 		body: 'Issue 5'
+	},
+	{
+		id: 3,
+		family_id: 'choice-3',
+		body: 'Issue 7'
 	}
 ];
 
 const Index: NextPage = () => {
-	const [viewMode, setViewMode] = useState<'source' | 'section'>('source');
+	const [viewMode, setViewMode] = useState<'response' | 'dataset'>('dataset');
 	const [isInstructorView, setInstructorView] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [submissionError, setSubmissionError] = useState(null);
@@ -145,9 +150,9 @@ const Index: NextPage = () => {
 						View mode
 						<select
 							value={viewMode ?? ''}
-							onChange={(e) => setViewMode(e.target.value as 'source' | 'section')}>
-							<option value="source">group by data source</option>
-							<option value="section">group by section of the data</option>
+							onChange={(e) => setViewMode(e.target.value as 'response' | 'dataset')}>
+							<option value="dataset">group by dataset</option>
+							<option value="response">group by response</option>
 						</select>
 					</label>
 				</div>
@@ -172,6 +177,7 @@ const Index: NextPage = () => {
 					submitting={isSubmitting}
 					submissionError={submissionError}
 					onChoiceSelected={onChoiceSelected}
+					viewMode={viewMode}
 				/>
 
 				<Text
