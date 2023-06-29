@@ -44,7 +44,7 @@ function truncateString(str: string, num: number) {
 	if (str.length <= num) {
 		return str;
 	}
-	return str.slice(0, num) + '...';
+	return str.slice(0, num).trim() + '...';
 }
 
 export const valueOf = (value: any) => {
@@ -189,7 +189,7 @@ const RefreshedResults: React.FC<Props> = (props) => {
 
 				const yAxis = axisLeft(y)
 					.tickSize(0)
-					.tickFormat((d) => truncateString(d, 12));
+					.tickFormat((d) => truncateString(d, 13));
 
 				// draw labels, make y domain line invisible
 				svg.append('g').call(yAxis).attr('class', 'yAxis');
