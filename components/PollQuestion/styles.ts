@@ -23,7 +23,7 @@ export const pollResultsStyles = (theme) => {
 
 		svg {
 			// max-width: 300px;
-			min-height: 600px;
+			//min-height: 600px;
 			flex-shrink: 0;
 			//margin: auto;
 

@@ -29,22 +29,32 @@ const POLL_CHOICES = [
 	{
 		id: 0,
 		family_id: 'choice-0',
-		body: 'Issue 1'
+		body: '< $20k'
 	},
 	{
 		id: 1,
 		family_id: 'choice-1',
-		body: 'Issue 2'
+		body: '$20k-39k'
 	},
 	{
 		id: 2,
 		family_id: 'choice-2',
-		body: 'Issue 5'
+		body: '$40k-59k'
 	},
 	{
 		id: 3,
 		family_id: 'choice-3',
-		body: 'Issue 7'
+		body: '$60k-$79k'
+	},
+	{
+		id: 4,
+		family_id: 'choice-4',
+		body: '$80k+'
+	},
+	{
+		id: 5,
+		family_id: 'choice-5',
+		body: 'I prefer not to answer'
 	}
 ];
 

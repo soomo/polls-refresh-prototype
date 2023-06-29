@@ -5,7 +5,7 @@ import { darken } from 'polished';
 import { axisBottom, axisLeft, axisTop } from 'd3-axis';
 import { select } from 'd3-selection';
 import { transpose, max, sum, merge } from 'd3-array';
-import { scaleOrdinal, scaleBand, scaleLinear } from 'd3-scale';
+import { scaleOrdinal, scaleBand, scaleLinear, scalePoint, scaleThreshold } from 'd3-scale';
 import { format } from 'd3-format';
 
 import { useIsUniversalVelvet } from '@soomo/lib/hooks';
@@ -40,6 +40,13 @@ interface Props {
 	viewMode: 'response' | 'dataset';
 }
 
+function truncateString(str: string, num: number) {
+	if (str.length <= num) {
+		return str;
+	}
+	return str.slice(0, num) + '...';
+}
+
 export const valueOf = (value: any) => {
 	if (/%$/.test(value))
 		return { type: 'percent', value: value.replace(/%$/, '') / 100, label: value };
@@ -64,21 +71,33 @@ const LIGHT_TICK_COLOR = '#E6E6E6';
 const DOMAIN_LINE_COLOR = '#B3B3B3';
 
 const shapedData = [
-	['class', 'texas', 'usa'],
+	['Class', 'Texas', 'United States'],
 	[35, 40, 80],
 	[15, 50, 20],
 	[30, 10, 10],
-	[60, 20, 27]
+	[60, 20, 27],
+	[15, 50, 20],
+	[30, 10, 10]
 ];
 
 const RefreshedResults: React.FC<Props> = (props) => {
-	const { data: graphData, sections, orderedChoices, viewMode } = props;
-
+	const { data: graphData, orderedChoices, viewMode } = props;
 	const ref = useRef();
 
-	const margin = { top: 20, right: 0, bottom: 40, left: 140 };
+	const barHeight = 24;
+	// stuff
+	const barMargin = { top: 33, bottom: 10 };
+	// number of bars per group
+	const factor = viewMode === 'response' ? orderedChoices.length : shapedData[0].length;
+	// number of groups
+	const base = viewMode === 'response' ? shapedData[0].length : orderedChoices.length;
+	// calculated total height of chart
+	const height22 = (barHeight + barMargin.bottom) * base * factor;
+	//console.log({ base, factor, height22 });
+	const margin = { top: 40, right: 0, bottom: 40, left: 160 };
 	const width = 650 - margin.left - margin.right;
-	const height = 600 - margin.top - margin.bottom;
+	const height = height22 - barMargin.bottom * 2;
+	const labelWidth = margin.left / 2;
 
 	useEffect(() => {
 		const svg = select(ref.current);
@@ -91,8 +110,8 @@ const RefreshedResults: React.FC<Props> = (props) => {
 		const finalHeight = height + margin.top + margin.bottom;
 
 		const svg = select(ref.current)
-			.attr('width', width + margin.left + margin.right)
-			.attr('height', height + margin.top + margin.bottom)
+			.attr('width', finalWidth)
+			.attr('height', finalHeight)
 			.append('g')
 			.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
 			.attr('viewBox', `0 0 ${finalWidth} ${finalHeight}`);
@@ -104,7 +123,7 @@ const RefreshedResults: React.FC<Props> = (props) => {
 			.ticks(5)
 			.tickFormat((d) => `${d}%`)
 			.tickSizeOuter(0)
-			.tickSizeInner(height * 2);
+			.tickSizeInner(finalHeight);
 
 		svg
 			.append('g')
@@ -112,7 +131,7 @@ const RefreshedResults: React.FC<Props> = (props) => {
 			.attr('transform', `translate(0, 0)`)
 			.call(axisX)
 			.selectAll('text')
-			.attr('dy', `-${height * 2 + 7}px`);
+			.attr('dy', `-${finalHeight + 7}px`);
 
 		// tick color
 		svg.selectAll('.tick line').attr('stroke', LIGHT_TICK_COLOR);
@@ -141,40 +160,38 @@ const RefreshedResults: React.FC<Props> = (props) => {
 			return group;
 		};
 
-		/**
-		 * Will get rid of repeated code later
-		 */
-		const groupMargin = { top: 50, bottom: 40 };
-		const barHeight = 24;
-
 		const drawSections = () => {
 			const groupScaleYDomain =
 				viewMode === 'response' ? orderedChoices : (shapedData[0] as string[]);
-
-			const groupScaleY = scaleBand()
-				.range([margin.top + groupMargin.top, height])
-				.domain(groupScaleYDomain)
-				.padding(0.5);
-
 			const modeData = viewMode === 'response' ? orderedChoices : (shapedData[0] as string[]);
+
+			const groupScaleY = scaleLinear().range([0, height22]).domain([0, groupScaleYDomain.length]);
 
 			modeData.map((datad, datadIndex) => {
 				// get a group in order of question choice from a section of the dataset
 				const group = viewMode === 'response' ? getGroupByChoice(datad) : getGroupByData(datad);
-				const topOfGroupY = groupScaleY(datad) - groupScaleY.step();
+				const topOfGroupY = groupScaleY(datadIndex);
 
 				/**
 				 * inner y-axis
 				 */
 				const y = scaleBand()
-					.range([topOfGroupY, groupScaleY(datad)])
-					.domain(viewMode === 'response' ? (shapedData[0] as string[]) : orderedChoices)
-					.padding(0.5);
+					.domain([
+						...(viewMode === 'response'
+							? (shapedData[0] as string[])
+							: orderedChoices.map((c) => truncateString(c, 12)))
+					])
+					.range([groupScaleY(datadIndex), groupScaleY(datadIndex + 1)])
+					.paddingOuter(0.4)
+					.paddingInner(0.2);
+
+				console.log('bandwidth: ', y.bandwidth());
 
 				const yAxis = axisLeft(y).tickSize(0);
 
 				// draw labels, make y domain line invisible
-				svg.append('g').call(yAxis).attr('class', 'yAxis').attr('font-size', '10px');
+				svg.append('g').call(yAxis).attr('class', 'yAxis');
+
 				svg.selectAll('.yAxis path').attr('stroke-width', 0);
 
 				// draw bars
@@ -185,17 +202,40 @@ const RefreshedResults: React.FC<Props> = (props) => {
 					.enter()
 					.append('rect')
 					.attr('x', x(0))
-					.attr(
-						'y',
-						(d, i) =>
-							y(viewMode === 'response' ? (shapedData[0][i] as string) : orderedChoices[i]) - 2
-					)
+					.attr('y', (d, i) => {
+						return y(
+							truncateString(
+								viewMode === 'response' ? (shapedData[0][i] as string) : orderedChoices[i],
+								12
+							)
+						);
+					})
 					.attr('width', (d) => x(d as number))
-					.attr('height', barHeight)
+					.attr('height', y.bandwidth())
 					.attr('fill', uvPollColors[datadIndex])
 					.attr('stroke', 'black')
 					.attr('stroke-width', '1px')
 					.attr('rx', 3);
+
+				svg
+					.append('g')
+					.selectAll('percentLabels')
+					.data(group)
+					.enter()
+					.append('text')
+					.text((d) => `${d}%`)
+					.attr('x', (d) => x(d as number) + 5)
+					.attr('y', (d, i) => {
+						return y(
+							truncateString(
+								viewMode === 'response' ? (shapedData[0][i] as string) : orderedChoices[i],
+								12
+							)
+						);
+					})
+					.attr('font-size', '10px')
+					.attr('font-family', 'Helvetica')
+					.attr('dy', y.bandwidth() / 1.5);
 
 				// draw divider line
 				svg
@@ -203,23 +243,66 @@ const RefreshedResults: React.FC<Props> = (props) => {
 					.style('stroke', DOMAIN_LINE_COLOR)
 					.style('stroke-width', 2)
 					.attr('x1', margin.left * -1)
-					.attr('y1', groupScaleY(datad))
+					.attr('y1', groupScaleY(datadIndex))
 					.attr('x2', width)
-					.attr('y2', groupScaleY(datad));
+					.attr('y2', groupScaleY(datadIndex));
 
-				// draw dataset label
+				// draw dataset label, maybe visx or d3plus for text wrapping
+
+				/*
 				svg
 					.append('text')
-					.text(datad.toUpperCase())
+					.text('10%')
 					.attr('font-weight', 'bold')
+					.attr('font-size', '10px')
+					.attr('font-family', 'Helvetica')
+					.attr('x', -(margin.left + margin.right))
+					.attr('y', topOfGroupY + 10);
+					.attr('dx', 0)
+					.attr('dy', 13);
+					*/
+
+				svg
+					.append('foreignObject')
+					.attr('width', labelWidth)
+					.attr('height', 60)
 					.attr('x', -(margin.left + margin.right))
 					.attr('y', topOfGroupY + 10)
 					.attr('dx', 0)
-					.attr('dy', 24);
+					.attr('dy', 13)
+					.append('xhtml:div')
+					.style('color', '#000')
+					.style('width', '100%')
+					.style('height', '100%')
+					.style('font-size', `13px`)
+					.style('font-weight', 'bold')
+					.style('overflow-y', 'auto')
+					.html(datad === 'Class' ? 'Your classmates' : datad);
 			});
 		};
 
 		drawSections();
+
+		/*
+		svg
+			.append('line')
+			.style('stroke', 'red')
+			.style('stroke-width', 2)
+			.attr('x1', margin.left * -1)
+			.attr('y1', 0)
+			.attr('x2', width)
+			.attr('y2', 0);
+		*/
+
+		/*
+		svg
+			.append('rect')
+			.style('fill', '#00ff0022')
+			.attr('x', 0)
+			.attr('y', 0)
+			.attr('width', width)
+			.attr('height', height22());
+			*/
 	};
 
 	if (!graphData) {
@@ -231,10 +314,19 @@ const RefreshedResults: React.FC<Props> = (props) => {
 			<div className="poll-results" css={pollResultsStyles}>
 				<QuestionPrompt body={'Poll Responses'} />
 				<p>Compare the results below with your class, the state of Texas, and the United States.</p>
-				<svg ref={ref} style={{ border: '1px solid #00000009', overflowX: 'visible' }} />
+				<svg
+					ref={ref}
+					style={{
+						border: '1px solid #00000011',
+						borderBottom: `2px solid ${DOMAIN_LINE_COLOR}`,
+						overflowX: 'visible'
+					}}
+				/>
 			</div>
 		</>
 	);
 };
 
 export default RefreshedResults;
+
+528.6756756756757 - 496.51351351351354;
