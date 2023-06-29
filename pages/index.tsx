@@ -60,6 +60,7 @@ const POLL_CHOICES = [
 
 const Index: NextPage = () => {
 	const [viewMode, setViewMode] = useState<'response' | 'dataset'>('dataset');
+	const [classOnlyMode, setClassOnlyMode] = useState(false);
 	const [isInstructorView, setInstructorView] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [submissionError, setSubmissionError] = useState(null);
@@ -69,52 +70,7 @@ const Index: NextPage = () => {
 		question_family_id: 'prototype',
 		updated_at: new Date().toISOString(),
 		completed: true,
-		data: {
-			class: [
-				{
-					label: 'Issue 1',
-					data: 35
-				},
-				{
-					label: 'Issue 2',
-					data: 15
-				},
-				{
-					label: 'Issue 5',
-					data: 30
-				}
-			],
-			texas: [
-				{
-					label: 'Issue 1',
-					data: 40
-				},
-				{
-					label: 'Issue 2',
-					data: 50
-				},
-				{
-					label: 'Issue 5',
-					data: 10
-				}
-			]
-			/*
-			unitedStates: [
-				{
-					label: 'Issue 1',
-					data: 80
-				},
-				{
-					label: 'Issue 2',
-					data: 20
-				},
-				{
-					label: 'Issue 5',
-					data: 10
-				}
-			]
-			*/
-		}
+		data: {}
 	});
 
 	const handleToggleView = useCallback(() => {
@@ -159,11 +115,25 @@ const Index: NextPage = () => {
 					<label>
 						View mode
 						<select
+							disabled={classOnlyMode}
 							value={viewMode ?? ''}
 							onChange={(e) => setViewMode(e.target.value as 'response' | 'dataset')}>
 							<option value="dataset">group by dataset</option>
 							<option value="response">group by response</option>
 						</select>
+					</label>
+					<label>
+						Class only mode
+						<input
+							style={{ marginLeft: '0.4rem' }}
+							type="checkbox"
+							value={classOnlyMode ? 'checked' : ''}
+							onChange={(e) => {
+								if (e.target.checked) {
+									setViewMode('dataset');
+								}
+								setClassOnlyMode(e.target.checked);
+							}}></input>
 					</label>
 				</div>
 			</TopBar>
@@ -194,6 +164,7 @@ const Index: NextPage = () => {
 					submissionError={submissionError}
 					onChoiceSelected={onChoiceSelected}
 					viewMode={viewMode}
+					classOnly={classOnlyMode}
 				/>
 
 				<Text

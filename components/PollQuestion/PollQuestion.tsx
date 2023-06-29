@@ -35,6 +35,7 @@ interface Props {
 	mobile?: boolean;
 	readOnly?: boolean;
 	viewMode: 'response' | 'dataset';
+	classOnly?: boolean;
 	/**
 	 * Temporary
 	 */
@@ -54,7 +55,8 @@ const PollQuestion: React.FC<Props> = (props) => {
 		submitting,
 		mobile,
 		readOnly,
-		viewMode
+		viewMode,
+		classOnly
 	} = props;
 	const [selectedOption, setSelectedOption] = useState<string>(null);
 	const [userActed, setUserActed] = useState(false);
@@ -147,6 +149,7 @@ const PollQuestion: React.FC<Props> = (props) => {
 									sections={answer.data}
 									orderedChoices={choices.map((c) => c.body)}
 									viewMode={viewMode}
+									classOnly={classOnly}
 								/>
 								{answer.updated_at && (
 									<div className="save-button-container">

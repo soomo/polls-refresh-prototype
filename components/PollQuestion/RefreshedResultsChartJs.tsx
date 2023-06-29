@@ -38,6 +38,7 @@ interface Props {
 	sections: Record<string, DataArray>;
 	orderedChoices: string[];
 	viewMode: 'response' | 'dataset';
+	classOnly?: boolean;
 }
 
 function truncateString(str: string, num: number) {
@@ -70,19 +71,19 @@ export const getFormat = (value: string) => {
 const LIGHT_TICK_COLOR = '#E6E6E6';
 const DOMAIN_LINE_COLOR = '#B3B3B3';
 
-const shapedData = [
-	['Class', 'Texas', 'United States'],
-	[35, 40, 80],
-	[15, 50, 20],
-	[30, 10, 10],
-	[60, 20, 27],
-	[15, 50, 20],
-	[0, 0, 0]
-];
-
 const RefreshedResults: React.FC<Props> = (props) => {
-	const { data: graphData, orderedChoices, viewMode } = props;
+	const { data: graphData, orderedChoices, viewMode, classOnly } = props;
 	const ref = useRef();
+
+	const shapedData = [
+		!classOnly ? ['Class', 'Texas', 'United States'] : ['Class'],
+		[35, 40, 80],
+		[15, 50, 20],
+		[30, 10, 10],
+		[60, 20, 27],
+		[15, 50, 20],
+		[0, 0, 0]
+	];
 
 	const barHeight = 24;
 	// stuff
@@ -100,10 +101,12 @@ const RefreshedResults: React.FC<Props> = (props) => {
 	const labelWidth = margin.left / 2;
 
 	useEffect(() => {
+		console.log(shapedData);
+
 		const svg = select(ref.current);
 		svg.selectAll('*').remove();
 		draw();
-	}, [viewMode]);
+	}, [viewMode, classOnly]);
 
 	const draw = () => {
 		const finalWidth = width + margin.left + margin.right;
@@ -153,7 +156,7 @@ const RefreshedResults: React.FC<Props> = (props) => {
 		};
 
 		const getGroupByData = (section: string) => {
-			const groupIndex = (shapedData[0] as string[]).indexOf(section);
+			const groupIndex = (shapedData[0] as unknown as string[]).indexOf(section);
 			const group = shapedData
 				.filter((g, i) => (i == 0 ? false : true))
 				.map((group) => group[groupIndex]);
@@ -162,8 +165,9 @@ const RefreshedResults: React.FC<Props> = (props) => {
 
 		const drawSections = () => {
 			const groupScaleYDomain =
-				viewMode === 'response' ? orderedChoices : (shapedData[0] as string[]);
-			const modeData = viewMode === 'response' ? orderedChoices : (shapedData[0] as string[]);
+				viewMode === 'response' ? orderedChoices : (shapedData[0] as unknown as string[]);
+			const modeData =
+				viewMode === 'response' ? orderedChoices : (shapedData[0] as unknown as string[]);
 
 			const groupScaleY = scaleLinear().range([0, height22]).domain([0, groupScaleYDomain.length]);
 
@@ -178,7 +182,7 @@ const RefreshedResults: React.FC<Props> = (props) => {
 				const y = scaleBand()
 					.domain([
 						...(viewMode === 'response'
-							? (shapedData[0] as string[])
+							? (shapedData[0] as unknown as string[])
 							: orderedChoices.map((c) => c))
 					])
 					.range([groupScaleY(datadIndex), groupScaleY(datadIndex + 1)])
@@ -204,7 +208,9 @@ const RefreshedResults: React.FC<Props> = (props) => {
 					.append('rect')
 					.attr('x', x(0))
 					.attr('y', (d, i) => {
-						return y(viewMode === 'response' ? (shapedData[0][i] as string) : orderedChoices[i]);
+						return y(
+							viewMode === 'response' ? (shapedData[0][i] as unknown as string) : orderedChoices[i]
+						);
 					})
 					.attr('width', (d) => x(d as number) || 1)
 					.attr('height', y.bandwidth())
@@ -222,7 +228,9 @@ const RefreshedResults: React.FC<Props> = (props) => {
 					.text((d) => `${d}%`)
 					.attr('x', (d) => x(d as number) + 5)
 					.attr('y', (d, i) => {
-						return y(viewMode === 'response' ? (shapedData[0][i] as string) : orderedChoices[i]);
+						return y(
+							viewMode === 'response' ? (shapedData[0][i] as unknown as string) : orderedChoices[i]
+						);
 					})
 					.attr('font-size', '10px')
 					.attr('font-family', 'Helvetica')
