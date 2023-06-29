@@ -181,7 +181,13 @@ const Index: NextPage = () => {
 				<PollQuestion
 					questionFamilyId="prototype"
 					body={POLL_BODY}
-					answer={answer}
+					answer={{
+						...answer,
+						correct: true,
+						created_at: new Date().toISOString(),
+						first_saved_at: new Date().toISOString(),
+						quiz_response_id: 10
+					}}
 					online
 					choices={POLL_CHOICES}
 					submitting={isSubmitting}
