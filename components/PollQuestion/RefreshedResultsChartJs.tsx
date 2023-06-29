@@ -77,7 +77,7 @@ const shapedData = [
 	[30, 10, 10],
 	[60, 20, 27],
 	[15, 50, 20],
-	[30, 10, 10]
+	[0, 0, 0]
 ];
 
 const RefreshedResults: React.FC<Props> = (props) => {
@@ -179,7 +179,7 @@ const RefreshedResults: React.FC<Props> = (props) => {
 					.domain([
 						...(viewMode === 'response'
 							? (shapedData[0] as string[])
-							: orderedChoices.map((c) => truncateString(c, 12)))
+							: orderedChoices.map((c) => c))
 					])
 					.range([groupScaleY(datadIndex), groupScaleY(datadIndex + 1)])
 					.paddingOuter(0.4)
@@ -187,11 +187,12 @@ const RefreshedResults: React.FC<Props> = (props) => {
 
 				console.log('bandwidth: ', y.bandwidth());
 
-				const yAxis = axisLeft(y).tickSize(0);
+				const yAxis = axisLeft(y)
+					.tickSize(0)
+					.tickFormat((d) => truncateString(d, 12));
 
 				// draw labels, make y domain line invisible
 				svg.append('g').call(yAxis).attr('class', 'yAxis');
-
 				svg.selectAll('.yAxis path').attr('stroke-width', 0);
 
 				// draw bars
@@ -203,14 +204,9 @@ const RefreshedResults: React.FC<Props> = (props) => {
 					.append('rect')
 					.attr('x', x(0))
 					.attr('y', (d, i) => {
-						return y(
-							truncateString(
-								viewMode === 'response' ? (shapedData[0][i] as string) : orderedChoices[i],
-								12
-							)
-						);
+						return y(viewMode === 'response' ? (shapedData[0][i] as string) : orderedChoices[i]);
 					})
-					.attr('width', (d) => x(d as number))
+					.attr('width', (d) => x(d as number) || 1)
 					.attr('height', y.bandwidth())
 					.attr('fill', uvPollColors[datadIndex])
 					.attr('stroke', 'black')
@@ -226,12 +222,7 @@ const RefreshedResults: React.FC<Props> = (props) => {
 					.text((d) => `${d}%`)
 					.attr('x', (d) => x(d as number) + 5)
 					.attr('y', (d, i) => {
-						return y(
-							truncateString(
-								viewMode === 'response' ? (shapedData[0][i] as string) : orderedChoices[i],
-								12
-							)
-						);
+						return y(viewMode === 'response' ? (shapedData[0][i] as string) : orderedChoices[i]);
 					})
 					.attr('font-size', '10px')
 					.attr('font-family', 'Helvetica')
@@ -247,21 +238,7 @@ const RefreshedResults: React.FC<Props> = (props) => {
 					.attr('x2', width)
 					.attr('y2', groupScaleY(datadIndex));
 
-				// draw dataset label, maybe visx or d3plus for text wrapping
-
-				/*
-				svg
-					.append('text')
-					.text('10%')
-					.attr('font-weight', 'bold')
-					.attr('font-size', '10px')
-					.attr('font-family', 'Helvetica')
-					.attr('x', -(margin.left + margin.right))
-					.attr('y', topOfGroupY + 10);
-					.attr('dx', 0)
-					.attr('dy', 13);
-					*/
-
+				// draw dataset label
 				svg
 					.append('foreignObject')
 					.attr('width', labelWidth)
@@ -282,6 +259,10 @@ const RefreshedResults: React.FC<Props> = (props) => {
 		};
 
 		drawSections();
+
+		/**
+		 * DEBUG LABELS AND LINES
+		 */
 
 		/*
 		svg
@@ -317,7 +298,7 @@ const RefreshedResults: React.FC<Props> = (props) => {
 				<svg
 					ref={ref}
 					style={{
-						border: '1px solid #00000011',
+						border: '1px solid #00000000',
 						borderBottom: `2px solid ${DOMAIN_LINE_COLOR}`,
 						overflowX: 'visible'
 					}}
@@ -328,5 +309,3 @@ const RefreshedResults: React.FC<Props> = (props) => {
 };
 
 export default RefreshedResults;
-
-528.6756756756757 - 496.51351351351354;
