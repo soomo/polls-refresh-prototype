@@ -62,8 +62,6 @@ const CollapseableQuestion = forwardRef<MCQRef, Props>(
 						<QuestionPrompt body={body} />
 					</div>
 
-					{!answered ? <ExclaimIcon /> : <span />}
-
 					{expanded ? (
 						<FaChevronUp {...pivotarIconProps} color="#5f01df" />
 					) : (
@@ -148,7 +146,7 @@ const styles = () => css`
 		display: grid;
 		width: 100%;
 		padding: 1rem 1.5rem;
-		grid-template-columns: 1fr auto auto;
+		grid-template-columns: 1fr auto;
 		align-items: flex-start;
 		column-gap: 1.5rem;
 		align-items: center;

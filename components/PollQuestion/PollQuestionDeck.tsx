@@ -28,9 +28,12 @@ const PollQuestionDeck: React.FC<Props> = (props) => {
 
 	const [expandedQuestionsMap, setExpandedQuestionsMap] = useState<{
 		[familyId: FamilyId]: boolean;
-	}>({
-		[`question-0`]: false
-	});
+	}>(
+		BODIES.reduce((acc, body, i) => {
+			acc[`question-${i}`] = true;
+			return acc;
+		}, {})
+	);
 
 	const [activePoolQuestionIndexesMap, setActivePoolQuestionIndexesMap] = useState(
 		Object.fromEntries(BODIES.map((poolElement, i) => [`question-${i}`, 0]))
@@ -68,14 +71,31 @@ const PollQuestionDeck: React.FC<Props> = (props) => {
 		}
 	};
 
+	const moreExpanded = Object.values(expandedQuestionsMap).filter((v) => v).length >= 3;
+
 	return (
 		<div css={styles}>
 			<WebtextQuestion>
 				<UniversalVelvetLeftBorder>
-					<QuestionType>
-						<PollIcon />
-						{BODIES.length} Poll Questions
-					</QuestionType>
+					<div className="top-container">
+						<QuestionType className="question-type">
+							<PollIcon />
+							{BODIES.length} Poll Questions
+						</QuestionType>
+						<button
+							className="collapse-button"
+							onClick={() => {
+								setExpandedQuestionsMap(
+									BODIES.reduce((acc, body, i) => {
+										acc[`question-${i}`] = moreExpanded ? false : true;
+										return acc;
+									}, {})
+								);
+							}}>
+							{moreExpanded ? 'Collapse All' : 'Expand All'}
+						</button>
+					</div>
+
 					<div className="questions">
 						{BODIES.map((body, i) => {
 							console.log({ isAnswered: isAnswered(i) });
@@ -110,6 +130,33 @@ const styles = css`
 		width: 25px;
 		height: 25px;
 		margin-right: 0;
+	}
+
+	.collapse-button {
+		align-self: flex-end;
+	}
+
+	.top-container {
+		display: flex;
+		align-items: center;
+		align-content: center;
+		justify-content: space-between;
+		margin-bottom: 28px;
+
+		button {
+			margin: 0;
+			background: none;
+			border: none;
+			height: 100%;
+			font-size: 20px;
+			color: #570dd6;
+			text-decoration: underline;
+			cursor: pointer;
+		}
+	}
+
+	div[data-testid='question-type'] {
+		margin-bottom: 0;
 	}
 
 	.questions {
