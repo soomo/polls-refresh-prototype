@@ -144,7 +144,7 @@ const PollQuestion: React.FC<Props> = (props) => {
 						)}
 						{completedAnswerWithData && (
 							<div>
-								<Tabs defaultSelectedTab="data">
+								<Tabs defaultSelectedTab="chart">
 									<TabList aria-label="poll question tabs">
 										<Tab tab="chart">Chart</Tab>
 										<Tab tab="data">Data</Tab>

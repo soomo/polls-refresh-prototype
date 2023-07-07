@@ -136,6 +136,7 @@ export const tabStyles = () => {
 			background: white;
 			border: 1px solid #b3b3b3;
 			border-bottom: none;
+            width: 80px;
 		}
 
 		.soomo-tablist {
