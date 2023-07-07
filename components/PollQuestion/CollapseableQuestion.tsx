@@ -26,6 +26,7 @@ interface Props {
 	onToggleExpanded: (familyId: string) => void;
 	body: string;
 	family_id: string;
+	mode: 'results' | 'return-to';
 }
 
 export interface MCQRef {
@@ -33,7 +34,7 @@ export interface MCQRef {
 }
 
 const CollapseableQuestion = forwardRef<MCQRef, Props>(
-	({ expanded, onToggleExpanded, answered, body, family_id }, ref) => {
+	({ expanded, onToggleExpanded, answered, body, family_id, mode }, ref) => {
 		const contentDivId = `${family_id}-content`;
 		const rejoinderRef = useRef<HTMLDivElement>(null);
 
@@ -70,31 +71,64 @@ const CollapseableQuestion = forwardRef<MCQRef, Props>(
 					)}
 				</button>
 				<div id={contentDivId} className="content" hidden={!expanded}>
-					<PollAliasQuestion
-						questionFamilyId={family_id}
-						body={body}
-						online
-						choices={POLL_CHOICES}
-						submitting={false}
-						submissionError={null}
-						viewMode="dataset"
-						answer={
-							answered
-								? {
-										id: 123456789,
-										body: 'choice-1',
-										question_family_id: 'prototype',
-										updated_at: new Date().toISOString(),
-										completed: true,
-										data: {},
-										correct: true,
-										created_at: new Date().toISOString(),
-										first_saved_at: new Date().toISOString(),
-										quiz_response_id: 10
-								  }
-								: undefined
-						}
-					/>
+					{mode === 'results' && (
+						<PollAliasQuestion
+							questionFamilyId={family_id}
+							body={body}
+							online
+							choices={POLL_CHOICES}
+							submitting={false}
+							submissionError={null}
+							viewMode="dataset"
+							answer={
+								answered
+									? {
+											id: 123456789,
+											body: 'choice-1',
+											question_family_id: 'prototype',
+											updated_at: new Date().toISOString(),
+											completed: true,
+											data: {},
+											correct: true,
+											created_at: new Date().toISOString(),
+											first_saved_at: new Date().toISOString(),
+											quiz_response_id: 10
+									  }
+									: undefined
+							}
+						/>
+					)}
+					{mode === 'return-to' &&
+						(answered ? (
+							<PollAliasQuestion
+								questionFamilyId={family_id}
+								body={body}
+								online
+								choices={POLL_CHOICES}
+								submitting={false}
+								submissionError={null}
+								viewMode="dataset"
+								answer={{
+									id: 123456789,
+									body: 'choice-1',
+									question_family_id: 'prototype',
+									updated_at: new Date().toISOString(),
+									completed: true,
+									data: {},
+									correct: true,
+									created_at: new Date().toISOString(),
+									first_saved_at: new Date().toISOString(),
+									quiz_response_id: 10
+								}}
+							/>
+						) : (
+							<div className="return-to-container">
+								<div className="to-see-results">To see results, answer the poll question in:</div>
+
+								<strong>Page 1.7: </strong>
+								<a>Taking an Audience-Centered Approach</a>
+							</div>
+						))}
 				</div>
 			</div>
 		);
@@ -169,6 +203,26 @@ const styles = () => css`
 
 		.question-choices {
 			margin-bottom: 1em;
+		}
+	}
+
+	.return-to-container {
+		font-size: 16px;
+		font-weight: 700;
+
+		.to-see-results {
+			font-size: 22px;
+			font-weight: 400;
+			margin-bottom: 0.5rem;
+		}
+
+		strong {
+			margin-left: 2rem;
+		}
+
+		a {
+			color: #570dd6;
+			text-decoration: underline;
 		}
 	}
 `;

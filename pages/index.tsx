@@ -65,9 +65,12 @@ export const POLL_CHOICES = [
 	}
 ];
 
+export type AnswerMode = 'some' | 'none' | 'all';
+
 const Index: NextPage = () => {
-	const [viewMode, setViewMode] = useState<'response' | 'dataset'>('dataset');
-	const [classOnlyMode, setClassOnlyMode] = useState(true);
+	const [viewMode, setViewMode] = useState<'results' | 'return-to'>('results');
+	const [answerMode, setAnswerMode] = useState<AnswerMode>('some');
+	const [classOnlyMode, setClassOnlyMode] = useState(false);
 	const [isInstructorView, setInstructorView] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [submissionError, setSubmissionError] = useState(null);
@@ -120,15 +123,27 @@ const Index: NextPage = () => {
 						Switch to {isInstructorView ? 'Student' : 'Instructor'} View
 					</button>*/}
 					<label>
-						View mode
+						Render mode
 						<select
 							disabled={classOnlyMode}
 							value={viewMode ?? ''}
-							onChange={(e) => setViewMode(e.target.value as 'response' | 'dataset')}>
-							<option value="dataset">group by dataset</option>
-							<option value="response">group by response</option>
+							onChange={(e) => setViewMode(e.target.value as 'results' | 'return-to')}>
+							<option value="results">show choices</option>
+							<option value="return-to">show return to link</option>
 						</select>
 					</label>
+					<label>
+						Answer mode
+						<select
+							disabled={classOnlyMode}
+							value={answerMode ?? ''}
+							onChange={(e) => setAnswerMode(e.target.value as AnswerMode)}>
+							<option value="some">some answered</option>
+							<option value="all">all answered</option>
+							<option value="none">none answered</option>
+						</select>
+					</label>
+					{/*
 					<label>
 						Class only mode
 						<input
@@ -138,11 +153,12 @@ const Index: NextPage = () => {
 							value={classOnlyMode ? 'checked' : ''}
 							onChange={(e) => {
 								if (e.target.checked) {
-									setViewMode('dataset');
+									setViewMode('results');
 								}
 								setClassOnlyMode(e.target.checked);
 							}}></input>
 					</label>
+					*/}
 				</div>
 			</TopBar>
 			<main css={mainStyles}>
@@ -156,7 +172,7 @@ const Index: NextPage = () => {
 					}}
 				/>
 
-				<PollQuestionDeck />
+				<PollQuestionDeck mode={viewMode} answerMode={answerMode} />
 
 				{/*
 				<PollQuestion
