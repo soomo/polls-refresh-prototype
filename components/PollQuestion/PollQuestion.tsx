@@ -21,6 +21,8 @@ import PollResults from './PollResults';
 import RefreshedResults from './RefreshedResults';
 import styles from './styles';
 import RefreshedResultsChartJs from './RefreshedResultsChartJs';
+import { Tab, TabList, TabPanel, Tabs } from './Tabs';
+import PollData from './PollData';
 
 interface Props {
 	questionFamilyId: string;
@@ -142,15 +144,27 @@ const PollQuestion: React.FC<Props> = (props) => {
 						)}
 						{completedAnswerWithData && (
 							<div>
-								{/* <PollResults data={answer.data} /> */}
-								{/* <RefreshedResults data={answer.data} sections={answer.data} /> */}
-								<RefreshedResultsChartJs
-									data={answer.data}
-									sections={answer.data}
-									orderedChoices={choices.map((c) => c.body)}
-									viewMode={viewMode}
-									classOnly={classOnly}
-								/>
+								<Tabs defaultSelectedTab="data">
+									<TabList aria-label="poll question tabs">
+										<Tab tab="chart">Chart</Tab>
+										<Tab tab="data">Data</Tab>
+									</TabList>
+									<TabPanel tab="chart">
+										{/* <PollResults data={answer.data} /> */}
+										{/* <RefreshedResults data={answer.data} sections={answer.data} /> */}
+										<RefreshedResultsChartJs
+											data={answer.data}
+											sections={answer.data}
+											orderedChoices={choices.map((c) => c.body)}
+											viewMode={viewMode}
+											classOnly={classOnly}
+										/>
+									</TabPanel>
+									<TabPanel tab="data">
+										<PollData />
+									</TabPanel>
+								</Tabs>
+
 								{answer.updated_at && (
 									<div className="save-button-container">
 										Last saved {formatTimeFromNow({ time: answer.updated_at })}

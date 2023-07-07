@@ -5,10 +5,11 @@ import { mixins, breakpoints } from '@soomo/lib/styles/themes';
 export const pollResultsStyles = (theme) => {
 	return css`
 		padding: 30px;
-		margin: 30px 0;
+		margin: 0 0;
 		background-color: #fff;
 		display: flex;
 		flex-wrap: wrap;
+		border-top: 0;
 
 		@media (max-width: ${breakpoints.small}) {
 			padding: 20px 7px;
