@@ -22,10 +22,17 @@ const PollQuestion = dynamic(() => import('../components/PollQuestion').then((m)
 	ssr: false
 });
 
+const PollQuestionDeck = dynamic(
+	() => import('../components/PollQuestion/PollQuestionDeck').then((m) => m.default),
+	{
+		ssr: false
+	}
+);
+
 const POLL_BODY =
 	'In your opinion, which of the three issues that specifically mention Child Protective Services (CPS) seems most similar to the problems reported in the video from the Austin American-Statesman?';
 
-const POLL_CHOICES = [
+export const POLL_CHOICES = [
 	{
 		id: 0,
 		family_id: 'choice-0',
@@ -60,7 +67,7 @@ const POLL_CHOICES = [
 
 const Index: NextPage = () => {
 	const [viewMode, setViewMode] = useState<'response' | 'dataset'>('dataset');
-	const [classOnlyMode, setClassOnlyMode] = useState(false);
+	const [classOnlyMode, setClassOnlyMode] = useState(true);
 	const [isInstructorView, setInstructorView] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [submissionError, setSubmissionError] = useState(null);
@@ -125,6 +132,7 @@ const Index: NextPage = () => {
 					<label>
 						Class only mode
 						<input
+							checked={classOnlyMode}
 							style={{ marginLeft: '0.4rem' }}
 							type="checkbox"
 							value={classOnlyMode ? 'checked' : ''}
@@ -148,6 +156,9 @@ const Index: NextPage = () => {
 					}}
 				/>
 
+				<PollQuestionDeck />
+
+				{/*
 				<PollQuestion
 					questionFamilyId="prototype"
 					body={POLL_BODY}
@@ -166,6 +177,7 @@ const Index: NextPage = () => {
 					viewMode={viewMode}
 					classOnly={classOnlyMode}
 				/>
+				*/}
 
 				<Text
 					online

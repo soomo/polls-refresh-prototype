@@ -105,8 +105,8 @@ export const pollDataStyles = () => {
 			margin-left: 1em;
 
 			::before {
-				counter-increment: .poll-data-comment;
-				content: counter(.poll-data-comment) '.';
+				//counter-increment: .poll-data-comment;
+				//content: counter(.poll-data-comment) '.';
 			}
 		}
 

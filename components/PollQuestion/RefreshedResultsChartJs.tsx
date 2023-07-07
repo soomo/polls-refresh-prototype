@@ -96,7 +96,7 @@ const RefreshedResults: React.FC<Props> = (props) => {
 	const height22 = (barHeight + barMargin.bottom) * base * factor;
 	//console.log({ base, factor, height22 });
 	const margin = { top: 40, right: 0, bottom: 40, left: 160 };
-	const width = 650 - margin.left - margin.right;
+	const width = 600 - margin.left - margin.right;
 	const height = height22 - barMargin.bottom * 2;
 	const labelWidth = margin.left / 2;
 

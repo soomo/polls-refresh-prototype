@@ -15,7 +15,6 @@ import WebtextButton from '@soomo/lib/components/WebtextButton';
 import { useAccessibilityFocus, useIsUniversalVelvet } from '@soomo/lib/hooks';
 import { Answer } from '@soomo/lib/types';
 import { FamilyId, QuestionChoice } from '@soomo/lib/types/WebtextManifest';
-import { formatTimeFromNow } from '@soomo/lib/utils/formatting';
 
 import PollResults from './PollResults';
 import RefreshedResults from './RefreshedResults';
@@ -164,12 +163,6 @@ const PollQuestion: React.FC<Props> = (props) => {
 										<PollData />
 									</TabPanel>
 								</Tabs>
-
-								{answer.updated_at && (
-									<div className="save-button-container">
-										Last saved {formatTimeFromNow({ time: answer.updated_at })}
-									</div>
-								)}
 							</div>
 						)}
 					</div>
