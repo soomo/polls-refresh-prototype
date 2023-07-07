@@ -16,8 +16,6 @@ import { useAccessibilityFocus, useIsUniversalVelvet } from '@soomo/lib/hooks';
 import { Answer } from '@soomo/lib/types';
 import { FamilyId, QuestionChoice } from '@soomo/lib/types/WebtextManifest';
 
-import PollResults from './PollResults';
-import RefreshedResults from './RefreshedResults';
 import styles from './styles';
 import RefreshedResultsChartJs from './RefreshedResultsChartJs';
 import { Tab, TabList, TabPanel, Tabs } from './Tabs';

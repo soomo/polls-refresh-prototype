@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { css } from '@emotion/core';
 import { FamilyId } from '@soomo/lib/types/WebtextManifest';
 import { UniversalVelvetLeftBorder } from '@soomo/lib/components/pageElements';
@@ -80,8 +80,6 @@ export default PollQuestionDeck;
 
 const styles = css`
 	position: relative;
-
-
 
 	.question-deck-icon {
 		width: 25px;
